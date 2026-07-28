@@ -30,8 +30,8 @@ npx playwright test
 
 - [Test Approach](docs/TEST_APPROACH.md) — architecture, design decisions, CI
 - [Quality Findings](docs/QUALITY_FINDINGS.md) — discovered bugs and issues
-- [BUG-001](docs/BUG-001-duplicate-todo-ids.md) — duplicate default Todo IDs (primary)
-- [BUG-002](docs/BUG-002-empty-state-persistence.md) — empty state persistence
+- [BUG-001](docs/BUG-001-duplicate-todo-ids.md) ([#1](https://github.com/ErvinAB/HornetQATask/issues/1)) — duplicate default Todo IDs (primary)
+- [BUG-002](docs/BUG-002-empty-state-persistence.md) ([#2](https://github.com/ErvinAB/HornetQATask/issues/2)) — empty state persistence
 
 ## Prerequisites
 
