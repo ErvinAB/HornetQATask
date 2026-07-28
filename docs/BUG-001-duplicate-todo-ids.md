@@ -1,5 +1,7 @@
 # BUG-001: Duplicate default Todo IDs break toggle-all and item-level updates
 
+**GitHub Issue**: [#1](https://github.com/ErvinAB/HornetQATask/issues/1)
+
 ## Summary
 
 The two default Todo records created during `app.js` initialisation can receive

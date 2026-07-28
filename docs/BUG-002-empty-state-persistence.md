@@ -3,6 +3,8 @@ title: "[BUG-002] Empty Todo list is repopulated with default tasks after reload
 labels: bug
 ---
 
+**GitHub Issue**: [#2](https://github.com/ErvinAB/HornetQATask/issues/2)
+
 ## Summary
 
 When a user deletes every Todo item in the application and reloads the page, the
