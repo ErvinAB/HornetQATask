@@ -1,0 +1,121 @@
+name: Hornet Todo Assessment
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && 'main-deploy' || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  ALLURE_RESULTS_DIR: allure-results
+  ALLURE_REPORT_DIR: allure-report
+  TEST_RESULTS_DIR: test-results
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type checking
+        run: npx tsc --noEmit
+
+      - name: Build Docker image
+        run: docker build -t hornet-todo-assessment .
+
+      - name: Run tests in Docker
+        id: tests
+        continue-on-error: true
+        run: |
+          docker rm test-run 2>/dev/null || true
+          docker run --name test-run \
+            -e CI=true \
+            hornet-todo-assessment
+          exit_code=$(docker inspect test-run --format='{{.State.ExitCode}}')
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+
+      - name: Copy results from container
+        if: always()
+        run: |
+          mkdir -p allure-results test-results
+          docker cp test-run:/app/allure-results/. allure-results/ 2>/dev/null || true
+          docker cp test-run:/app/test-results/. test-results/ 2>/dev/null || true
+          docker rm test-run 2>/dev/null || true
+
+      - name: Restore previous Allure history (main branch only)
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          git fetch origin gh-pages --depth=1 2>/dev/null || true
+          if git show-ref --verify refs/remotes/origin/gh-pages &>/dev/null; then
+            git checkout origin/gh-pages -- history/ 2>/dev/null || true
+            if [ -d "history" ]; then
+              mkdir -p allure-results/history
+              cp -r history/* allure-results/history/ 2>/dev/null || true
+            fi
+            git checkout -f "$GITHUB_SHA"
+          else
+            echo "No gh-pages branch found — first run, no history to restore."
+          fi
+
+      - name: Generate Allure report
+        if: always()
+        run: npx allure generate allure-results --clean -o allure-report
+
+      - name: Upload Allure report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.run_id }}
+          path: allure-report/
+          retention-days: 30
+
+      - name: Upload raw Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ github.run_id }}
+          path: allure-results/
+          retention-days: 30
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-evidence-${{ github.run_id }}
+          path: test-results/
+          retention-days: 30
+
+      - name: Publish Allure report to GitHub Pages (main only)
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: .
+          keep_files: false
+
+      - name: Fail workflow if tests failed
+        if: steps.tests.outputs.exit_code != '0'
+        run: |
+          echo "Test execution failed with exit code ${{ steps.tests.outputs.exit_code }}"
+          exit 1

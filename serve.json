@@ -1,0 +1,13 @@
+{
+  "public": "app",
+  "rewrites": [
+    { "source": "/todo", "destination": "/todo.html" }
+  ],
+  "headers": [{
+    "source": "**/*",
+    "headers": [{
+      "key": "Cache-Control",
+      "value": "no-cache"
+    }]
+  }]
+}
