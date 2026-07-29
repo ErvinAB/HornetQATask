@@ -59,24 +59,30 @@ unreliable and may cause users to distrust whether their changes were saved.
 
 ## Technical Observation
 
-The `Store` constructor in `todo/src/store.js` calls `this._seed()` whenever
-`localStorage` contains no data or an empty `todos` array. The `_seed()` method
-writes two hard-coded records. The constructor does not distinguish between
-"first-ever load" (where seeding is helpful) and "user deliberately cleared the
-list" (where seeding is destructive).
+The `init()` function in `app/assets/js/todo/app.js` calls `storage.findAll()`
+and re-seeds the two defaults whenever `data.length === 0`:
+
+```js
+todo.storage.findAll((data) => {
+  if (!data.length) {
+    todo.controller.addItem('Pay electric bill')
+    todo.controller.addItem('Walk the dog')
+  }
+})
+```
+
+This does not distinguish between "first-ever load" (where seeding is helpful)
+and "user deliberately cleared the list" (where seeding is destructive).
 
 A straightforward improvement would be to track whether the data was explicitly
 cleared (e.g. via a `_cleared` flag or by checking a separate marker in
 localStorage) so that an empty-but-intentional state is preserved.
 
-Storing a user-facing empty array `{ todos: [] }` should be sufficient for the
-store to skip re-seeding.
-
 ## Evidence
 
 - Reproduced manually in Chromium.
-- Confirmed from source code inspection: `store.js` `_seed()` is called
-  unconditionally when the stored data is missing or empty.
+- Confirmed from source code inspection: `app.js` `init()` unconditionally
+  re-seeds defaults when `storage.findAll` returns an empty array.
 
 ## Acceptance Criteria
 

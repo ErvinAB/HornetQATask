@@ -49,8 +49,11 @@ produced duplicate IDs for the two default records.
 
 **Test impact**: The toggle-all test seeds localStorage with explicit
 deterministic IDs (`{ id: 1, ... }, { id: 2, ... }`) to work around this
-defect for normal coverage. The defect-reproduction test exercises the
-unmodified default state.
+defect for normal coverage. BUG-001 was reproduced through repeated exploratory
+execution and localStorage inspection; there is no automated expected-failure
+test for this defect because its ~80% timing-based reproduction would introduce
+undesirable flakiness without modifying product source. BUG-002 is the one
+automated expected-failure regression using `test.fail()`.
 
 **Suggested fix**: Replace `new Date().getTime()` with a monotonically
 increasing counter persisted in localStorage (e.g. a "high-water-mark"
@@ -109,8 +112,8 @@ If `currentPage` is an unexpected value (e.g. `#/unknown`), the second
 Uncaught TypeError: Cannot set properties of null (setting 'className')
 ```
 
-This crashes the filter update. All other application functions remain
-operational, but the filter UI state becomes inconsistent.
+This crashes the filter update; the filter UI state becomes inconsistent.
+(Other application functions were not tested after triggering this condition.)
 
 **Suggested fix**: Guard against `null` before assigning `className`.
 
@@ -165,20 +168,19 @@ selector convention mismatch, not a product bug.
 **Resolution**: Configured `testIdAttribute: 'data-test'` in
 `playwright.config.ts`.
 
-### N2: Hidden toggle-all checkbox requires programmatic interaction
+### N2: Hidden toggle-all checkbox
 
 **Category**: Testability observation (not a product defect)
 
 The `.toggle-all` checkbox is visually hidden (`opacity: 0; position:
-absolute; right: 100%; bottom: 100%`). A `<label for="toggle-all">` is
-provided as the visible click target, but the application's `click` event
-handler is attached to the checkbox element itself, not the label. Standard
-label-click event forwarding does not reliably trigger the handler in
-headless browser automation.
+absolute; right: 100%; bottom: 100%`). A `<label for="toggle-all">` with
+text "Mark all as complete" is provided as the visible click target, and
+Playwright's `getByLabel('Mark all as complete').click()` reliably triggers
+the checkbox's `change` event via the browser's built-in label-click
+forwarding.
 
-**Resolution**: The test uses `el.click()` via `locator.evaluate()` to
-programmatically click the hidden checkbox, which correctly triggers the
-attached event handler.
+**Resolution**: The test clicks the visible `<label>` element rather than the
+hidden checkbox directly.
 
 ### N3: CSS-selector interpolation with special characters (test implementation)
 

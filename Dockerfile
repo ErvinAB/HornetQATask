@@ -14,6 +14,7 @@ RUN npm ci
 
 COPY app ./app
 COPY serve.json ./
+COPY scripts ./scripts
 COPY tests ./tests
 COPY playwright.config.ts tsconfig.json allure.setup.ts ./
 

@@ -60,7 +60,7 @@ export class TodoPage {
   async deleteTodo(title: string) {
     const item = this.todoItem(title);
     await item.hover();
-    await item.locator('.destroy').click({ force: true });
+    await item.locator('.destroy').click();
   }
 
   async selectFilter(filter: FilterOption) {
@@ -69,9 +69,7 @@ export class TodoPage {
   }
 
   async toggleAll() {
-    await this.toggleAllCheckbox.evaluate((el: HTMLInputElement) => {
-      el.click();
-    });
+    await this.page.locator('label[for="toggle-all"]').click();
   }
 
   async clearCompletedAction() {

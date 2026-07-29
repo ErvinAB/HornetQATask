@@ -34,7 +34,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npx serve . -p 8080 --cors',
+    command: 'node scripts/server.cjs',
     url: 'http://127.0.0.1:8080/todo/',
     reuseExistingServer: !process.env.CI,
     timeout: 15000,
